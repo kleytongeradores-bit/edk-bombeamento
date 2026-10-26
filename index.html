@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b2b50">
+<title>EDK ELÉTRICA | Bombeamento</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#0b2b50;--blue:#1268b3;--pale:#eef5fb;--ink:#17324d;--muted:#64788b;--green:#198754;--red:#c53030;--amber:#b7791f;--line:#dce6ef;--white:#fff}
+*{box-sizing:border-box}body{margin:0;background:#f3f7fb;color:var(--ink);font-family:Arial,Helvetica,sans-serif}header{background:linear-gradient(135deg,#082344,#1268b3);color:#fff;padding:22px 18px 24px;border-radius:0 0 24px 24px;box-shadow:0 5px 18px #0b2b5026}header .brand{font-size:12px;font-weight:800;letter-spacing:2px;opacity:.85}header h1{font-size:23px;margin:7px 0 4px}header p{margin:0;font-size:13px;opacity:.88}.wrap{max-width:760px;margin:auto;padding:14px 14px 35px}.bar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:3px 0 12px}.pill{font-size:12px;font-weight:700;border-radius:999px;padding:8px 11px;background:#fff;border:1px solid var(--line)}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#9aa8b5;margin-right:6px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin:0 0 13px;box-shadow:0 3px 12px #102c4610}.card h2{font-size:16px;margin:0 0 13px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric{background:var(--pale);padding:13px;border-radius:12px;min-height:85px}.label{font-size:12px;color:var(--muted);margin-bottom:8px}.value{font-size:20px;font-weight:800}.sub{font-size:11px;color:var(--muted);margin-top:5px}.tankrow{display:flex;align-items:center;gap:16px}.tank{width:78px;height:130px;border:3px solid #5680a4;border-radius:8px 8px 13px 13px;position:relative;overflow:hidden;background:#fff;flex-shrink:0}.water{position:absolute;bottom:0;left:0;right:0;height:0;background:linear-gradient(#58b5f4,#1672bd);transition:height .4s}.tank:after{content:'CAIXA';position:absolute;top:8px;left:0;right:0;text-align:center;font-size:10px;font-weight:bold;color:#42617c}.tankinfo{flex:1}.percent{font-size:32px;font-weight:800;color:var(--blue)}.floatlist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.floatitem{display:flex;align-items:center;gap:8px;padding:10px;background:#f7fafc;border:1px solid var(--line);border-radius:10px;font-size:12px}.led{width:11px;height:11px;border-radius:50%;background:#aab6c2;flex-shrink:0}.led.on{background:#21a366;box-shadow:0 0 0 3px #21a36620}.led.warn{background:#d69e2e}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btn{border:0;border-radius:12px;padding:14px 12px;font-size:14px;font-weight:800;cursor:pointer;color:#fff;min-height:48px}.btn:disabled{opacity:.45;cursor:not-allowed}.start{background:var(--green)}.stop{background:var(--red)}.secondary{background:#e7f0f8;color:var(--navy);border:1px solid #ccdeed}.mode{display:flex;gap:8px}.mode .btn{flex:1}.smallbtn{font-size:12px;padding:9px 11px;min-height:auto}.notice{padding:11px 12px;border-radius:10px;background:#fff7e6;color:#805b11;font-size:12px;line-height:1.45;border:1px solid #f4dfae}.danger{background:#fff0f0;color:#922b2b;border-color:#f0c4c4}.ok{background:#eaf8f0;color:#17643b;border-color:#c4e8d2}label{display:block;font-size:12px;font-weight:700;margin:10px 0 5px}input,select{width:100%;border:1px solid #cbd8e4;border-radius:9px;padding:12px;font-size:14px;color:var(--ink);background:#fff}footer{text-align:center;color:#718396;font-size:11px;padding:8px 4px 20px;line-height:1.5}.hidden{display:none!important}.toast{position:fixed;left:14px;right:14px;bottom:18px;background:#102b45;color:#fff;padding:13px 15px;border-radius:12px;font-size:13px;box-shadow:0 5px 25px #0003;z-index:5}.sectionhint{font-size:12px;color:var(--muted);line-height:1.45;margin-top:-5px;margin-bottom:12px}
+@media(min-width:600px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.floatlist{grid-template-columns:repeat(3,minmax(0,1fr))}.wrap{padding-top:20px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">EDK ELÉTRICA</div>
+  <h1>Controle de Bombeamento</h1>
+  <p>Monitoramento de nível • Comando da bomba • Alarmes</p>
+</header>
+<main class="wrap">
+  <div class="bar">
+    <span class="pill"><span id="connDot" class="dot"></span><span id="connText">Não conectado</span></span>
+    <button id="openSettings" class="btn secondary smallbtn">Configurar conexão</button>
+  </div>
+  <div id="demoNotice" class="notice" style="margin-bottom:13px">
+    <b>Modo de demonstração.</b> Configure a conexão (local ou Supabase) para receber dados reais.
+  </div>
+
+  <section class="card"><h2>Estado do sistema</h2>
+    <div class="grid">
+      <div class="metric"><div class="label">Bomba</div><div class="value" id="pumpState">—</div><div class="sub" id="pumpSub">Aguardando</div></div>
+      <div class="metric"><div class="label">Modo</div><div class="value" id="modeState">—</div><div class="sub">Manual / Automático</div></div>
+      <div class="metric"><div class="label">Cisterna</div><div class="value" id="cisternState">—</div><div class="sub">Boia B5</div></div>
+      <div class="metric"><div class="label">Alarmes</div><div class="value" id="alarmState">—</div><div class="sub" id="alarmSub">—</div></div>
+    </div>
+  </section>
+
+  <section class="card"><h2>Nível estimado da caixa</h2>
+    <div class="tankrow">
+      <div class="tank"><div id="water" class="water"></div></div>
+      <div class="tankinfo">
+        <div class="percent"><span id="level">—</span><span style="font-size:18px">%</span></div>
+        <div id="levelText">Aguardando leitura</div>
+        <div class="sub">Estimativa baseada nas boias ou valor enviado.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card"><h2>Boias de nível</h2>
+    <div class="floatlist" id="floatList"></div>
+  </section>
+
+  <section class="card"><h2>Comando da bomba</h2>
+    <div class="notice danger" id="safetyNotice" style="margin-bottom:12px">Comandos indisponíveis até conexão confirmada.</div>
+    <div class="actions">
+      <button id="onBtn" class="btn start" disabled>▶ Solicitar LIGAR</button>
+      <button id="offBtn" class="btn stop" disabled>■ Solicitar DESLIGAR</button>
+    </div>
+    <h2 style="margin-top:18px">Modo de operação</h2>
+    <div class="mode">
+      <button id="manualBtn" class="btn secondary" disabled>Manual</button>
+      <button id="autoBtn" class="btn secondary" disabled>Automático</button>
+    </div>
+    <p class="sectionhint" style="margin-top:10px;margin-bottom:0">O ESP32 valida localmente todas as condições de segurança.</p>
+  </section>
+
+  <section class="card"><h2>Última atualização</h2>
+    <div id="lastUpdate" style="font-size:13px;color:var(--muted)">Ainda não recebeu dados.</div>
+    <div id="lastError" style="font-size:12px;color:#a52a2a;margin-top:6px"></div>
+    <button id="refreshBtn" class="btn secondary smallbtn" style="margin-top:10px">Atualizar agora</button>
+  </section>
+
+  <section class="card hidden" id="settingsCard">
+    <h2>Configuração da conexão</h2>
+    <label>Modo de conexão</label>
+    <select id="connMode">
+      <option value="supabase">Supabase (remoto - clientes)</option>
+      <option value="local">Local (IP do ESP32)</option>
+    </select>
+
+    <div id="supabaseFields">
+      <label>Supabase URL</label>
+      <input id="sbUrl" placeholder="https://xxxx.supabase.co">
+      <label>Supabase Anon Key</label>
+      <input id="sbKey" type="password" placeholder="eyJhbGciOi...">
+      <label>Device ID</label>
+      <input id="deviceId" placeholder="ex: bomba-casa-01">
+    </div>
+
+    <div id="localFields" class="hidden">
+      <label>Endereço base da API (ESP32)</label>
+      <input id="apiBase" placeholder="http://192.168.1.50">
+      <label>Token (opcional)</label>
+      <input id="apiToken" type="password">
+    </div>
+
+    <label>Intervalo de atualização (segundos)</label>
+    <input id="pollInterval" type="number" min="3" max="60" value="5">
+
+    <div class="actions" style="margin-top:13px">
+      <button id="saveSettings" class="btn start">Salvar e conectar</button>
+      <button id="cancelSettings" class="btn secondary">Cancelar</button>
+    </div>
+    <div class="notice" style="margin-top:12px">No modo Supabase o ESP32 deve estar sincronizando a tabela <code>status</code> e lendo a tabela <code>commands</code>.</div>
+  </section>
+
+  <footer>EDK ELÉTRICA · Interface para clientes<br>Controle remoto via Supabase ou local via ESP32</footer>
+</main>
+<div id="toast" class="toast hidden"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let cfg = JSON.parse(localStorage.getItem('edk_cfg') || '{}');
+let supabase = null;
+let connected = false;
+let timer = null;
+
+function toast(s) {
+  $('toast').textContent = s;
+  $('toast').classList.remove('hidden');
+  setTimeout(() => $('toast').classList.add('hidden'), 3600);
+}
+
+function setConnection(ok, msg) {
+  connected = ok;
+  $('connDot').style.background = ok ? '#21a366' : '#9aa8b5';
+  $('connText').textContent = msg;
+  $('demoNotice').classList.toggle('hidden', ok);
+  $('safetyNotice').classList.toggle('hidden', ok);
+  ['onBtn','offBtn','manualBtn','autoBtn'].forEach(id => $(id).disabled = !ok);
+}
+
+function normBool(v) {
+  return v === true || v === 1 || v === '1' || String(v).toLowerCase() === 'true';
+}
+
+function render(d) {
+  const pump = normBool(d.pump_running ?? d.pumpRunning ?? d.bombaLigada);
+  $('pumpState').textContent = pump ? 'LIGADA' : 'DESLIGADA';
+  $('pumpSub').textContent = 'Estado informado';
+
+  const mode = String(d.mode || '').toLowerCase();
+  $('modeState').textContent = mode.includes('man') ? 'MANUAL' : 'AUTOMÁTICO';
+
+  const vals = [d.b1, d.b2, d.b3, d.b4, d.b5];
+  const labels = ['B1 · Nível baixo caixa','B2 · Baixo intermediário','B3 · Alto intermediário','B4 · Máximo da caixa','B5 · Água na cisterna'];
+  $('floatList').innerHTML = labels.map((l,i) => {
+    const known = vals[i] !== undefined && vals[i] !== null;
+    const active = known && normBool(vals[i]);
+    return `<div class="floatitem"><span class="led ${known?(active?'on':'warn'):''}"></span><span>${l}<br><b>${!known?'Sem dado':(active?'Ativa':'Inativa')}</b></span></div>`;
+  }).join('');
+
+  $('cisternState').textContent = vals[4] == null ? 'Sem dado' : (normBool(vals[4]) ? 'Água disponível' : 'Sem água');
+
+  let level = Number(d.level_percent ?? d.levelPercent);
+  if (!Number.isFinite(level)) {
+    const box = vals.slice(0,4);
+    if (box.every(v => v != null)) {
+      level = normBool(box[3]) ? 100 : normBool(box[2]) ? 75 : normBool(box[1]) ? 50 : normBool(box[0]) ? 25 : 0;
+    }
+  }
+  if (Number.isFinite(level)) {
+    level = Math.max(0, Math.min(100, level));
+    $('level').textContent = Math.round(level);
+    $('water').style.height = level + '%';
+    $('levelText').textContent = level >= 100 ? 'Nível máximo' : level <= 0 ? 'Nível baixo/vazio' : 'Nível estimado';
+  } else {
+    $('level').textContent = '—';
+    $('water').style.height = '0%';
+    $('levelText').textContent = 'Sem dado de nível';
+  }
+
+  const alarm = normBool(d.alarm_active ?? d.alarmActive);
+  $('alarmState').textContent = alarm ? 'ATIVO' : 'Normal';
+  $('alarmSub').textContent = alarm ? (d.alarm_message || d.alarmMessage || 'Verifique') : 'Nenhum alarme';
+
+  $('lastUpdate').textContent = 'Atualizado em ' + new Date().toLocaleString('pt-BR');
+  $('lastError').textContent = '';
+  setConnection(true, cfg.mode === 'supabase' ? 'Conectado (Supabase)' : 'Conectado (Local)');
+}
+
+async function refresh() {
+  if (cfg.mode === 'supabase') {
+    if (!supabase) { setConnection(false, 'Supabase não configurado'); return; }
+    try {
+      const { data, error } = await supabase
+        .from('status')
+        .select('*')
+        .eq('device_id', cfg.deviceId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (data) render(data);
+      else setConnection(false, 'Nenhum status encontrado');
+    } catch (e) {
+      setConnection(false, 'Erro Supabase');
+      $('lastError').textContent = e.message || String(e);
+    }
+  } else {
+    // modo local (código original simplificado)
+    if (!cfg.base) { setConnection(false, 'Não configurado'); return; }
+    try {
+      const r = await fetch(cfg.base.replace(/\/$/,'') + '/api/status', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      render(d);
+    } catch (e) {
+      setConnection(false, 'Sem comunicação local');
+      $('lastError').textContent = e.message;
+    }
+  }
+}
+
+async function sendCommand(cmd, mode) {
+  if (!connected) { toast('Sem conexão'); return; }
+  if (cmd === 'LIGAR' && !confirm('Solicitar partida da bomba?')) return;
+
+  if (cfg.mode === 'supabase') {
+    try {
+      const { error } = await supabase.from('commands').insert({
+        device_id: cfg.deviceId,
+        command: cmd,
+        mode: mode || null
+      });
+      if (error) throw error;
+      toast('Comando ' + cmd + ' enviado ao Supabase');
+      setTimeout(refresh, 1500);
+    } catch (e) {
+      toast('Falha: ' + e.message);
+    }
+  } else {
+    // local
+    try {
+      const body = mode ? { command: 'MODO', mode } : { command: cmd };
+      const r = await fetch(cfg.base.replace(/\/$/,'') + '/api/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!r.ok) throw new Error(await r.text());
+      toast('Comando enviado');
+      setTimeout(refresh, 800);
+    } catch (e) {
+      toast('Falha: ' + e.message);
+    }
+  }
+}
+
+function openSettings() {
+  $('settingsCard').classList.remove('hidden');
+  $('connMode').value = cfg.mode || 'supabase';
+  $('sbUrl').value = cfg.sbUrl || '';
+  $('sbKey').value = cfg.sbKey || '';
+  $('deviceId').value = cfg.deviceId || '';
+  $('apiBase').value = cfg.base || '';
+  $('apiToken').value = cfg.token || '';
+  $('pollInterval').value = cfg.interval || 5;
+  toggleFields();
+  $('settingsCard').scrollIntoView({ behavior: 'smooth' });
+}
+
+function toggleFields() {
+  const isSb = $('connMode').value === 'supabase';
+  $('supabaseFields').classList.toggle('hidden', !isSb);
+  $('localFields').classList.toggle('hidden', isSb);
+}
+
+$('connMode').onchange = toggleFields;
+$('openSettings').onclick = openSettings;
+$('cancelSettings').onclick = () => $('settingsCard').classList.add('hidden');
+
+$('saveSettings').onclick = () => {
+  cfg.mode = $('connMode').value;
+  cfg.sbUrl = $('sbUrl').value.trim();
+  cfg.sbKey = $('sbKey').value.trim();
+  cfg.deviceId = $('deviceId').value.trim();
+  cfg.base = $('apiBase').value.trim();
+  cfg.token = $('apiToken').value.trim();
+  cfg.interval = Math.max(3, Math.min(60, Number($('pollInterval').value) || 5));
+  localStorage.setItem('edk_cfg', JSON.stringify(cfg));
+
+  if (cfg.mode === 'supabase' && cfg.sbUrl && cfg.sbKey) {
+    supabase = window.supabase.createClient(cfg.sbUrl, cfg.sbKey);
+  } else {
+    supabase = null;
+  }
+
+  $('settingsCard').classList.add('hidden');
+  if (timer) clearInterval(timer);
+  refresh();
+  timer = setInterval(refresh, cfg.interval * 1000);
+};
+
+$('refreshBtn').onclick = refresh;
+$('onBtn').onclick = () => sendCommand('LIGAR');
+$('offBtn').onclick = () => sendCommand('DESLIGAR');
+$('manualBtn').onclick = () => sendCommand('MODO', 'MANUAL');
+$('autoBtn').onclick = () => sendCommand('MODO', 'AUTOMATICO');
+
+// inicialização
+if (cfg.mode === 'supabase' && cfg.sbUrl && cfg.sbKey) {
+  supabase = window.supabase.createClient(cfg.sbUrl, cfg.sbKey);
+  refresh();
+  timer = setInterval(refresh, (cfg.interval || 5) * 1000);
+} else if (cfg.base) {
+  refresh();
+  timer = setInterval(refresh, (cfg.interval || 5) * 1000);
+} else {
+  setConnection(false, 'Não configurado');
+}
+</script>
+</body>
+</html>
