@@ -112,7 +112,7 @@
 <script>
 const $ = id => document.getElementById(id);
 let cfg = JSON.parse(localStorage.getItem('edk_cfg') || '{}');
-let supabase = null;
+let sbClient = null;
 let connected = false;
 let timer = null;
 
@@ -182,9 +182,9 @@ function render(d) {
 
 async function refresh() {
   if (cfg.mode === 'supabase') {
-    if (!supabase) { setConnection(false, 'Supabase não configurado'); return; }
+    if (!sbClient) { setConnection(false, 'Supabase não configurado'); return; }
     try {
-      const { data, error } = await supabase
+      const { data, error } = await sbClient
         .from('status')
         .select('*')
         .eq('device_id', cfg.deviceId)
@@ -219,7 +219,7 @@ async function sendCommand(cmd, mode) {
 
   if (cfg.mode === 'supabase') {
     try {
-      const { error } = await supabase.from('commands').insert({
+      const { error } = await sbClient.from('commands').insert({
         device_id: cfg.deviceId,
         command: cmd,
         mode: mode || null
@@ -282,9 +282,9 @@ $('saveSettings').onclick = () => {
   localStorage.setItem('edk_cfg', JSON.stringify(cfg));
 
   if (cfg.mode === 'supabase' && cfg.sbUrl && cfg.sbKey) {
-    supabase = window.supabase.createClient(cfg.sbUrl, cfg.sbKey);
+    sbClient = window.supabase.createClient(cfg.sbUrl, cfg.sbKey);
   } else {
-    supabase = null;
+    sbClient = null;
   }
 
   $('settingsCard').classList.add('hidden');
@@ -301,7 +301,7 @@ $('autoBtn').onclick = () => sendCommand('MODO', 'AUTOMATICO');
 
 // inicialização
 if (cfg.mode === 'supabase' && cfg.sbUrl && cfg.sbKey) {
-  supabase = window.supabase.createClient(cfg.sbUrl, cfg.sbKey);
+  sbClient = window.supabase.createClient(cfg.sbUrl, cfg.sbKey);
   refresh();
   timer = setInterval(refresh, (cfg.interval || 5) * 1000);
 } else if (cfg.base) {
