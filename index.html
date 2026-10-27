@@ -21,7 +21,7 @@
 <main class="wrap">
   <div class="bar">
     <span class="pill"><span id="connDot" class="dot"></span><span id="connText">Não conectado</span></span>
-    <button id="openSettings" class="btn secondary smallbtn">Configurar conexão</button>
+   <button id="openSettings" class="btn secondary smallbtn hidden">Configurar conexão</button>
   </div>
   <div id="demoNotice" class="notice" style="margin-bottom:13px">
     <b>Modo de demonstração.</b> Configure a conexão (local ou Supabase) para receber dados reais.
@@ -111,7 +111,14 @@
 
 <script>
 const $ = id => document.getElementById(id);
-let cfg = JSON.parse(localStorage.getItem('edk_cfg') || '{}');
+let cfg = {
+  mode: 'supabase',
+  sbUrl: 'https://itlfmnrbbhhyurzfdhbq.supabase.co',
+  sbKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0bGZtbnJiYmhoeXVyemZkaGJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNTIzNTAsImV4cCI6MjEwODYyODM1MH0.-292wFfBv-SxH6AYLKyLk5QvoGatpoVHjZNoMk7_BzM',
+  deviceId: 'BOMBA-CASA-01',
+  interval: 5
+
+};
 let sbClient = null;
 let connected = false;
 let timer = null;
